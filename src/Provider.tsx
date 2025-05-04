@@ -1,30 +1,10 @@
-import React, { useEffect, useReducer, ReactNode } from "react";
-import { DeviceEventEmitter } from "react-native";
+import React, { Component, ReactNode } from "react";
+import { DeviceEventEmitter, EmitterSubscription } from "react-native";
 
 import { Modal } from "./Modal";
-import { INITIAL_STATE, ActionType, ModalProviderEvent } from "./constants";
-import { Action, IModalPayload, ProviderState } from "./types";
+import { INITIAL_STATE, ModalProviderEvent } from "./constants";
+import { IModalPayload, ProviderState } from "./types";
 import { hashPayloadToId } from "./utils";
-
-const reducerFn = (state: ProviderState, action: Action): ProviderState => {
-  switch (action.type) {
-    case ActionType.ON_OPEN:
-      return {
-        ...state,
-        isVisible: true,
-        current: action.payload,
-        next: undefined,
-      };
-    case ActionType.ON_CLOSE:
-      return { ...state, isVisible: false };
-    case ActionType.ADD_TO_QUEUE:
-      return { ...state, next: action.payload };
-    case ActionType.ON_ANIMATION:
-      return { ...state, transitioning: action.payload };
-    default:
-      return state;
-  }
-};
 
 /**
  * @param children - The children of the provider
@@ -35,102 +15,132 @@ type GlobalModalProviderProps = {
   discardModalWithSameId?: boolean;
 };
 
-export const GlobalModalProvider = ({
-  children,
-  discardModalWithSameId,
-}: GlobalModalProviderProps) => {
-  const [state, dispatch] = useReducer(reducerFn, INITIAL_STATE);
+export class GlobalModalProvider extends Component<
+  GlobalModalProviderProps,
+  ProviderState
+> {
+  private openListener: EmitterSubscription | null = null;
+  private closeListener: EmitterSubscription | null = null;
 
-  const onStartAnimation = () =>
-    dispatch({ type: ActionType.ON_ANIMATION, payload: true });
+  constructor(props: GlobalModalProviderProps) {
+    super(props);
+    this.state = INITIAL_STATE;
 
-  const onFinishAnimation = () =>
-    dispatch({ type: ActionType.ON_ANIMATION, payload: false });
+    /** Binding methods to ensure they have the correct 'this' context when called */
+    this.onRequestOpen = this.onRequestOpen.bind(this);
+    this.onRequestClose = this.onRequestClose.bind(this);
+    this.onStartAnimation = this.onStartAnimation.bind(this);
+    this.onFinishAnimation = this.onFinishAnimation.bind(this);
+    this.onModalHide = this.onModalHide.bind(this);
+  }
 
-  const onModalHide = () => {
-    if (state.next) {
-      onRequestOpen(state.next);
-    }
-  };
+  componentDidMount() {
+    /** Adding open modal event listener */
+    this.openListener = DeviceEventEmitter.addListener(
+      ModalProviderEvent.ON_OPEN,
+      this.onRequestOpen
+    );
 
-  const onRequestOpen = (payload: IModalPayload) => {
+    /** Adding close modal event listener */
+    this.closeListener = DeviceEventEmitter.addListener(
+      ModalProviderEvent.ON_CLOSE,
+      this.onRequestClose
+    );
+  }
+
+  componentWillUnmount() {
+    /** Removing modal event listeners */
+    this.openListener?.remove();
+    this.closeListener?.remove();
+  }
+
+  onRequestOpen(payload: IModalPayload) {
+    const { discardModalWithSameId } = this.props;
+    const { isVisible, current, transitioning, next } = this.state;
+
+    /** If the payload has no ID and discardModalWithSameId is enabled, generate a new ID */
+    const payloadId =
+      !payload.id && discardModalWithSameId
+        ? hashPayloadToId(payload)
+        : payload.id;
+
     /** If the current modal is unnavoidable and visible, do not open a new modal */
-    if (state.isVisible && state.current.unnavoidable) {
+    if (isVisible && current.unnavoidable) {
       return;
     }
 
     /** If the current modal is visible, it has discardModalWithSameId enabled and the new modal has the same ID, do not open a new modal */
-    if (
-      state.isVisible &&
-      payload.id === state.current.id &&
-      discardModalWithSameId
-    ) {
+    if (isVisible && payloadId === current.id && discardModalWithSameId) {
       return;
     }
 
     /** If the current modal is visible or transitioning, there is no next modal in the queue and the new modal has skipAnimation set to false, add the new modal to the queue and close the current modal */
-    if (
-      (state.isVisible || state.transitioning) &&
-      !state.next &&
-      !payload.skipAnimation
-    ) {
-      dispatch({ type: ActionType.ADD_TO_QUEUE, payload });
-      dispatch({ type: ActionType.ON_CLOSE });
+    if ((isVisible || transitioning) && !next && !payload.skipAnimation) {
+      this.setState({ next: payload });
+      this.setState({ isVisible: false });
       return;
     }
 
     /** Open the new modal with the provided ID or an auto-generated ID */
-    dispatch({
-      type: ActionType.ON_OPEN,
-      payload: { ...payload, id: payload.id || hashPayloadToId(payload) },
+    this.setState({
+      isVisible: true,
+      current: { ...payload, id: payloadId },
+      next: undefined,
     });
-  };
+  }
 
-  const onRequestClose = (id: IModalPayload["id"]) => {
+  onRequestClose(id?: IModalPayload["id"]) {
+    const { isVisible, current } = this.state;
+
     /** Early return if modal is not visible */
-    if (!state.isVisible) {
+    if (!isVisible) {
       return;
     }
 
     /** If the current modal is unnavoidable and the ID does not match, do not close the modal */
-    if (state.current.unnavoidable && id !== state.current.id) {
+    if (current.unnavoidable && id !== current.id) {
       return;
     }
 
     /** Close the current modal */
-    dispatch({ type: ActionType.ON_CLOSE });
-  };
+    this.setState({ isVisible: false });
+  }
 
-  /** Adding event listeners to deal with modal events */
-  useEffect(() => {
-    const onOpen = DeviceEventEmitter.addListener(
-      ModalProviderEvent.ON_OPEN,
-      onRequestOpen
+  /** Starting animation */
+  onStartAnimation() {
+    this.setState({ transitioning: true });
+  }
+
+  /** Finishing animation */
+  onFinishAnimation() {
+    this.setState({ transitioning: false });
+  }
+
+  /** Modal hide callback */
+  onModalHide() {
+    const { next } = this.state;
+    if (next) {
+      this.onRequestOpen(next);
+    }
+  }
+
+  render() {
+    const { children } = this.props;
+    const { current, isVisible } = this.state;
+
+    return (
+      <>
+        {children}
+        <Modal
+          {...current}
+          onStartAnimation={this.onStartAnimation}
+          onFinishAnimation={this.onFinishAnimation}
+          onModalHide={this.onModalHide}
+          isVisible={isVisible}
+        >
+          {current.children}
+        </Modal>
+      </>
     );
-
-    const onClose = DeviceEventEmitter.addListener(
-      ModalProviderEvent.ON_CLOSE,
-      onRequestClose
-    );
-
-    return () => {
-      onOpen.remove();
-      onClose.remove();
-    };
-  }, []);
-
-  return (
-    <>
-      {children}
-      <Modal
-        {...state.current}
-        onStartAnimation={onStartAnimation}
-        onFinishAnimation={onFinishAnimation}
-        onModalHide={onModalHide}
-        isVisible={state.isVisible}
-      >
-        {state.current.children}
-      </Modal>
-    </>
-  );
-};
+  }
+}
