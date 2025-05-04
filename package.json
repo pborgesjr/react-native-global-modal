@@ -1,5 +1,5 @@
 {
-  "name": "react-native-global-modal",
+  "name": "@pborgesjr/react-native-global-modal",
   "version": "1.0.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -8,6 +8,9 @@
   ],
   "scripts": {
     "build": "tsc"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "peerDependencies": {
     "react": ">=17.0.0",
