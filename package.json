@@ -14,6 +14,7 @@
     "url": "git+https://github.com/pborgesjr/react-native-global-modal.git"
   },
   "homepage": "https://github.com/pborgesjr/react-native-global-modal#readme",
+  "license": "MIT",
   "publishConfig": {
     "access": "public"
   },
