@@ -9,6 +9,11 @@
   "scripts": {
     "build": "tsc"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pborgesjr/react-native-global-modal.git"
+  },
+  "homepage": "https://github.com/pborgesjr/react-native-global-modal#readme",
   "publishConfig": {
     "access": "public"
   },

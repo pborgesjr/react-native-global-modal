@@ -1,5 +1,7 @@
 # React Native Global Modal
 
+[![npm version](https://badge.fury.io/js/@pborgesjr%2Freact-native-global-modal.svg?icon=si%3Anpm)](https://badge.fury.io/js/@pborgesjr%2Freact-native-global-modal)
+
 A lightweight and flexible modal management system for React Native applications. This library provides a simple way to show modals from anywhere in your app using a provider pattern.
 
 ## Features
