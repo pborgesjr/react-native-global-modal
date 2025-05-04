@@ -13,11 +13,11 @@ A lightweight and flexible modal management system for React Native applications
 ## Installation
 
 ```bash
-npm install react-native-global-modal react-native-modal
+npm install @pborgesjr/react-native-global-modal react-native-modal
 # or
-yarn add react-native-global-modal react-native-modal
+yarn add @pborgesjr/react-native-global-modal react-native-modal
 # or
-pnpm add react-native-global-modal react-native-modal
+pnpm add @pborgesjr/react-native-global-modal react-native-modal
 ```
 
 ## Usage
