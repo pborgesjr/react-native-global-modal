@@ -2,19 +2,25 @@ import React from "react";
 import { Dimensions, StyleSheet } from "react-native";
 import RNModal, { ModalProps as RNModalProps } from "react-native-modal";
 
+/** Animation in timing */
 const ANIMATION_IN_TIMING = 200;
+/** Animation out timing */
 const ANIMATION_OUT_TIMING = 200;
+/** Device height */
 const DEVICE_HEIGHT = Dimensions.get("screen").height;
+/** Device width */
 const DEVICE_WIDTH = Dimensions.get("screen").width;
 
+/** Modal props */
 export interface ModalProps
   extends Partial<Omit<RNModalProps, "onBackdropPress">> {
-  onBackButtonPress?: VoidFunction;
-  onBackdropPress?: VoidFunction;
-  onStartAnimation?: VoidFunction;
-  onFinishAnimation?: VoidFunction;
+  onBackButtonPress?: () => void;
+  onBackdropPress?: () => void;
+  onStartAnimation?: () => void;
+  onFinishAnimation?: () => void;
 }
 
+/** Modal component */
 export const Modal = ({
   children,
   onBackButtonPress,
@@ -24,10 +30,13 @@ export const Modal = ({
   onModalHide,
   ...rest
 }: ModalProps) => {
+  /** Handle modal hide */
   const handleOnModalHide = () => {
     onFinishAnimation?.();
     onModalHide?.();
   };
+
+  /** Render modal */
   return (
     <RNModal
       animationInTiming={ANIMATION_IN_TIMING}
@@ -44,7 +53,6 @@ export const Modal = ({
       hideModalContentWhileAnimating
       onBackdropPress={onBackdropPress}
       onBackButtonPress={onBackButtonPress}
-      useNativeDriver
       useNativeDriverForBackdrop
       hasBackdrop
       style={styles.default}
@@ -55,6 +63,7 @@ export const Modal = ({
   );
 };
 
+/** Default modal styles */
 const styles = StyleSheet.create({
   default: {
     alignItems: "center",
