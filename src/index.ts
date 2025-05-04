@@ -8,5 +8,5 @@ export * from "./types";
 export const openModal = (payload: IModalPayload) =>
   DeviceEventEmitter.emit(ModalProviderEvent.ON_OPEN, payload);
 
-export const closeModal = (id: IModalPayload["id"]) =>
+export const closeModal = (id?: IModalPayload["id"]) =>
   DeviceEventEmitter.emit(ModalProviderEvent.ON_CLOSE, id);
