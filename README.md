@@ -27,7 +27,7 @@ pnpm add @pborgesjr/react-native-global-modal react-native-modal
 1. First, wrap your app with the `GlobalModalProvider`:
 
 ```tsx
-import { GlobalModalProvider } from "react-native-global-modal";
+import { GlobalModalProvider } from "@pborgesjr/react-native-global-modal";
 
 function App() {
   return <GlobalModalProvider>{/* Your app content */}</GlobalModalProvider>;
@@ -37,7 +37,7 @@ function App() {
 2. Use the `openModal` and `closeModal` functions to control modals:
 
 ```tsx
-import { openModal, closeModal } from "react-native-global-modal";
+import { openModal, closeModal } from "@pborgesjr/react-native-global-modal";
 
 // Open a modal
 openModal({
@@ -146,7 +146,7 @@ When a new modal is requested while another is open:
 ```tsx
 import React from "react";
 import { View, Button } from "react-native";
-import { openModal, closeModal } from "react-native-global-modal";
+import { openModal, closeModal } from "@pborgesjr/react-native-global-modal";
 
 const MyModal = ({ title, onClose }) => (
   <View>
